@@ -1,0 +1,93 @@
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import helmet from 'helmet';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import { generalLimiter, authLimiter } from './middleware/rateLimit.js';
+
+// Load environment variables from root .env
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+dotenv.config({ path: join(__dirname, '../../.env') });
+
+// Import routes
+import authRoutes from './routes/auth.js';
+import productsRoutes from './routes/products.js';
+import forecastsRoutes from './routes/forecasts.js';
+import suppliersRoutes from './routes/suppliers.js';
+import ordersRoutes from './routes/orders.js';
+import analyticsRoutes from './routes/analytics.js';
+import aiRoutes from './routes/ai.js';
+import exportRoutes from './routes/export.js';
+
+// Import new AI feature routes
+import demandPredictorRoutes from './routes/demandPredictor.js';
+import supplierRiskRoutes from './routes/supplierRisk.js';
+import reorderOptimizerRoutes from './routes/reorderOptimizer.js';
+import deadStockRoutes from './routes/deadStock.js';
+import warehouseOptimizerRoutes from './routes/warehouseOptimizer.js';
+import inventoryOptimizerRoutes from './routes/inventoryOptimizer.js';
+import shipmentTrackerRoutes from './routes/shipmentTracker.js';
+
+const app = express();
+const PORT = process.env.BACKEND_PORT || 3001;
+
+// Security middleware
+app.use(helmet());
+app.use(cors());
+app.use(express.json());
+
+// Rate limiting
+app.use('/api/', generalLimiter);
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/forgot-password', authLimiter);
+app.use('/api/auth/reset-password', authLimiter);
+
+// Request logging
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
+});
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/products', productsRoutes);
+app.use('/api/forecasts', forecastsRoutes);
+app.use('/api/suppliers', suppliersRoutes);
+app.use('/api/orders', ordersRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/export', exportRoutes);
+
+// New AI Feature Routes
+app.use('/api/demand-predictor', demandPredictorRoutes);
+app.use('/api/supplier-risk', supplierRiskRoutes);
+app.use('/api/reorder-optimizer', reorderOptimizerRoutes);
+app.use('/api/dead-stock', deadStockRoutes);
+app.use('/api/warehouse-optimizer', warehouseOptimizerRoutes);
+app.use('/api/inventory-optimizer', inventoryOptimizerRoutes);
+app.use('/api/shipment-tracker', shipmentTrackerRoutes);
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal server error'
+  });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ error: 'Not found' });
+});
+
+app.listen(PORT, () => {
+  console.log(`Backend server running on http://localhost:${PORT}`);
+});
