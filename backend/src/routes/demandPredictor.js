@@ -3,8 +3,22 @@ import { query } from '../db/connection.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { generateAIResponse } from '../services/openrouter.js';
 import { parsePagination, paginatedResponse } from '../middleware/pagination.js';
+import { aiLimiter } from '../middleware/rateLimit.js';
 
 const router = express.Router();
+
+// Input validation helper
+function validateAnalyzeInput(req, res, next) {
+  const { productId } = req.params;
+  if (!productId || typeof productId !== 'string' || productId.trim() === '') {
+    return res.status(400).json({ error: 'Valid productId is required' });
+  }
+  // Must be a positive integer string
+  if (!/^\d+$/.test(productId)) {
+    return res.status(400).json({ error: 'productId must be a numeric ID' });
+  }
+  next();
+}
 
 // Get all demand predictions (with pagination + search)
 router.get('/', authenticateToken, async (req, res) => {
@@ -176,7 +190,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 });
 
 // Generate AI demand prediction for a product
-router.post('/analyze/:productId', authenticateToken, async (req, res) => {
+router.post('/analyze/:productId', authenticateToken, aiLimiter, validateAnalyzeInput, async (req, res) => {
   try {
     const { productId } = req.params;
 
@@ -244,6 +258,34 @@ Respond with this exact JSON structure:
 }`;
 
     const aiResponse = await generateAIResponse(prompt);
+
+    // Persist AI result to ai_recommendations table for audit trail + dashboard visibility
+    try {
+      const summary = typeof aiResponse === 'object'
+        ? (aiResponse.recommendation || aiResponse.summary || JSON.stringify(aiResponse).substring(0, 200))
+        : String(aiResponse).substring(0, 200);
+
+      const priority = typeof aiResponse === 'object' && aiResponse.overall_trend === 'downward'
+        ? 'high'
+        : typeof aiResponse === 'object' && aiResponse.overall_trend === 'upward'
+        ? 'medium'
+        : 'low';
+
+      await query(`
+        INSERT INTO ai_recommendations (product_id, type, priority, title, description, ai_reasoning, status)
+        VALUES ($1, 'demand_forecast', $2, $3, $4, $5, 'pending')
+        ON CONFLICT DO NOTHING
+      `, [
+        productId,
+        priority,
+        `Demand Forecast: ${product.name}`,
+        summary,
+        JSON.stringify(aiResponse)
+      ]);
+    } catch (dbErr) {
+      // Non-fatal: log but don't fail the response
+      console.warn('Failed to persist AI recommendation:', dbErr.message);
+    }
 
     res.json({
       product: {

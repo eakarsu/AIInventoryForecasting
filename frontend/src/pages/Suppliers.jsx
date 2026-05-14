@@ -19,6 +19,8 @@ export default function Suppliers() {
   const [editData, setEditData] = useState({});
   const [aiScoring, setAiScoring] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [diversification, setDiversification] = useState(null);
+  const [divLoading, setDivLoading] = useState(false);
   const [pagination, setPagination] = useState(null);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
@@ -126,6 +128,24 @@ export default function Suppliers() {
     }
   };
 
+  const handleDiversificationAnalysis = async () => {
+    setDivLoading(true);
+    setDiversification(null);
+    try {
+      const data = await api.post('/ai/supplier-diversification', {});
+      setDiversification(data);
+      toast.success('Diversification analysis complete');
+    } catch (err) {
+      if (err.message && err.message.includes('429')) {
+        toast.error('AI rate limit reached. Please wait before making more requests.');
+      } else {
+        toast.error('Diversification analysis failed: ' + err.message);
+      }
+    } finally {
+      setDivLoading(false);
+    }
+  };
+
   const handleSearch = (term) => {
     setSearch(term);
     setPage(1);
@@ -186,6 +206,9 @@ export default function Suppliers() {
           )}
           <button onClick={getAIScoring} className="btn-secondary" disabled={aiLoading}>
             {aiLoading ? 'Analyzing...' : 'AI Supplier Scoring'}
+          </button>
+          <button onClick={handleDiversificationAnalysis} className="btn-secondary" disabled={divLoading}>
+            {divLoading ? 'Analyzing...' : 'Diversification Analysis'}
           </button>
           {canWrite && (
             <button onClick={() => setShowNewForm(true)} className="btn-primary">
@@ -259,6 +282,80 @@ export default function Suppliers() {
             <p className="mt-4 text-sm text-gray-600">
               <strong>Top Performer:</strong> {aiScoring.scoring.top_performer}
             </p>
+          )}
+        </div>
+      )}
+
+      {/* Supplier Diversification Results */}
+      {divLoading && (
+        <div className="mb-6 bg-orange-50 border-2 border-orange-400 rounded-xl p-6 flex items-center justify-center">
+          <svg className="animate-spin h-6 w-6 text-orange-500 mr-3" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span className="text-orange-700 font-bold">Running diversification analysis...</span>
+        </div>
+      )}
+
+      {diversification && !divLoading && (
+        <div className="mb-6 bg-orange-50 rounded-xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Supplier Diversification Analysis</h3>
+            <button onClick={() => setDiversification(null)} className="text-gray-400 hover:text-gray-500">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          {/* Overall Risk Score Gauge */}
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex-shrink-0">
+              <div className="relative w-24 h-24">
+                <svg viewBox="0 0 36 36" className="w-24 h-24 -rotate-90">
+                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e5e7eb" strokeWidth="3" />
+                  <circle cx="18" cy="18" r="15.9" fill="none"
+                    stroke={diversification.overall_risk_score > 70 ? '#ef4444' : diversification.overall_risk_score > 40 ? '#f97316' : '#10b981'}
+                    strokeWidth="3"
+                    strokeDasharray={`${diversification.overall_risk_score} ${100 - diversification.overall_risk_score}`}
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-lg font-bold text-gray-800">{diversification.overall_risk_score ?? '?'}</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-700">Overall Risk Score</p>
+              <p className="text-xs text-gray-500">0 = low risk, 100 = high risk</p>
+              {diversification.message && <p className="text-sm text-green-700 mt-1">{diversification.message}</p>}
+            </div>
+          </div>
+          {/* High-risk products */}
+          {diversification.high_risk_products && diversification.high_risk_products.length > 0 && (
+            <div className="mb-4">
+              <h4 className="text-sm font-semibold text-red-700 mb-2">High-Risk Products (Single Source)</h4>
+              <div className="flex flex-wrap gap-2">
+                {diversification.high_risk_products.map((p, i) => (
+                  <span key={i} className="px-2 py-1 bg-red-100 text-red-800 rounded text-sm">{p}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {/* Recommendations */}
+          {diversification.diversification_recommendations && diversification.diversification_recommendations.length > 0 && (
+            <div>
+              <h4 className="text-sm font-semibold text-gray-700 mb-2">Recommendations</h4>
+              <div className="space-y-3">
+                {diversification.diversification_recommendations.map((rec, i) => (
+                  <div key={i} className="bg-white rounded-lg p-3 shadow-sm">
+                    <p className="font-medium text-gray-800 text-sm">{rec.product}</p>
+                    <p className="text-xs text-gray-500 mt-1">Alternative suppliers: {(rec.alternative_suppliers || []).join(', ')}</p>
+                    <p className="text-xs text-gray-500">Lead time impact: {rec.lead_time_impact}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       )}

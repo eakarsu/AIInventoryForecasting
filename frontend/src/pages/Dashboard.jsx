@@ -12,10 +12,25 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedRec, setSelectedRec] = useState(null);
+  const [stockoutRisk, setStockoutRisk] = useState(null);
+  const [stockoutLoading, setStockoutLoading] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
+    loadStockoutRisk();
   }, []);
+
+  const loadStockoutRisk = async () => {
+    setStockoutLoading(true);
+    try {
+      const data = await api.get('/products/stockout-risk');
+      setStockoutRisk(data);
+    } catch (err) {
+      console.error('Failed to load stockout risk:', err);
+    } finally {
+      setStockoutLoading(false);
+    }
+  };
 
   const loadDashboardData = async () => {
     setError(null);
@@ -234,6 +249,89 @@ export default function Dashboard() {
           }
         />
       </div>
+
+      {/* Stockout Risk Widget */}
+      {(stockoutLoading || stockoutRisk) && (
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Stockout Risk Monitor</h2>
+          {stockoutLoading ? (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center text-gray-500 text-sm">Loading stockout risk...</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Critical */}
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-red-600 text-white">CRITICAL</span>
+                  <span className="text-sm text-red-700 font-medium">&lt;7 days supply</span>
+                  <span className="ml-auto text-xs text-red-500">{(stockoutRisk?.critical || []).length} items</span>
+                </div>
+                {(stockoutRisk?.critical || []).length === 0 ? (
+                  <p className="text-sm text-gray-500">No critical stockouts</p>
+                ) : (
+                  <div className="space-y-2">
+                    {(stockoutRisk.critical || []).slice(0, 5).map(item => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between bg-white rounded-lg px-3 py-2 shadow-sm cursor-pointer hover:bg-red-50"
+                        onClick={() => navigate('/products')}
+                      >
+                        <div>
+                          <p className="text-sm font-medium text-gray-800">{item.name}</p>
+                          <p className="text-xs text-gray-500">{item.sku} &middot; {item.supplier_name || 'No supplier'}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-red-600">{item.days_of_supply}d left</p>
+                          <p className="text-xs text-gray-500">{item.current_stock} units</p>
+                        </div>
+                      </div>
+                    ))}
+                    {(stockoutRisk.critical || []).length > 5 && (
+                      <p className="text-xs text-red-500 text-center cursor-pointer" onClick={() => navigate('/products')}>
+                        +{stockoutRisk.critical.length - 5} more critical items
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+              {/* Warning */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-yellow-500 text-white">WARNING</span>
+                  <span className="text-sm text-yellow-700 font-medium">7-14 days supply</span>
+                  <span className="ml-auto text-xs text-yellow-600">{(stockoutRisk?.warning || []).length} items</span>
+                </div>
+                {(stockoutRisk?.warning || []).length === 0 ? (
+                  <p className="text-sm text-gray-500">No warnings</p>
+                ) : (
+                  <div className="space-y-2">
+                    {(stockoutRisk.warning || []).slice(0, 5).map(item => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between bg-white rounded-lg px-3 py-2 shadow-sm cursor-pointer hover:bg-yellow-50"
+                        onClick={() => navigate('/products')}
+                      >
+                        <div>
+                          <p className="text-sm font-medium text-gray-800">{item.name}</p>
+                          <p className="text-xs text-gray-500">{item.sku} &middot; {item.supplier_name || 'No supplier'}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-yellow-600">{item.days_of_supply}d left</p>
+                          <p className="text-xs text-gray-500">{item.current_stock} units</p>
+                        </div>
+                      </div>
+                    ))}
+                    {(stockoutRisk.warning || []).length > 5 && (
+                      <p className="text-xs text-yellow-600 text-center cursor-pointer" onClick={() => navigate('/products')}>
+                        +{stockoutRisk.warning.length - 5} more warning items
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* AI Features Section */}
       <h2 className="text-lg font-semibold text-gray-900 mb-4">AI-Powered Features</h2>

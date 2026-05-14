@@ -1,10 +1,22 @@
+
+// === Batch 04 Gaps & Frontend Mounts ===
+import route_gap_no_markdown_timing_ai from '../routes/gap-no-markdown-timing-ai.js';
+import route_gap_no_supplier_disruption_simulator from '../routes/gap-no-supplier-disruption-simulator.js';
+import route_gap_no_multi_warehouse_balancing_ai from '../routes/gap-no-multi-warehouse-balancing-ai.js';
+import route_gap_no_sku_rationalization_which_skus_to from '../routes/gap-no-sku-rationalization-which-skus-to.js';
+import route_gap_live_erp_sap_netsuite_integrations_still from '../routes/gap-live-erp-sap-netsuite-integrations-still.js';
+import route_gap_no_financial_pl_module from '../routes/gap-no-financial-pl-module.js';
+import route_gap_no_notifications_module_0_references from '../routes/gap-no-notifications-module-0-references.js';
+import route_gap_no_webhook_surface from '../routes/gap-no-webhook-surface.js';
+import route_gap_no_file_upload_for_supplier_docs from '../routes/gap-no-file-upload-for-supplier-docs.js';
+import route_gap_no_real_time_websocket_inventory_updates from '../routes/gap-no-real-time-websocket-inventory-updates.js';
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { generalLimiter, authLimiter } from './middleware/rateLimit.js';
+import { generalLimiter, authLimiter, aiLimiter, aiAnalyzeLimiter } from './middleware/rateLimit.js';
 
 // Load environment variables from root .env
 const __filename = fileURLToPath(import.meta.url);
@@ -29,6 +41,16 @@ import deadStockRoutes from './routes/deadStock.js';
 import warehouseOptimizerRoutes from './routes/warehouseOptimizer.js';
 import inventoryOptimizerRoutes from './routes/inventoryOptimizer.js';
 import shipmentTrackerRoutes from './routes/shipmentTracker.js';
+import stockoutRiskRoutes from './routes/stockoutRisk.js';
+import supplierDiversificationRoutes from './routes/supplierDiversification.js';
+import promotionSimulatorRoutes from './routes/promotionSimulator.js';
+
+// Apply pass 5 — additive
+import replenishmentRoutes from './routes/replenishment.js';
+import supplierMarketplaceRoutes from './routes/supplierMarketplace.js';
+import integrationRoutes from './routes/integrations.js';
+
+import { ensureAuditTable } from './services/aiAudit.js';
 
 const app = express();
 const PORT = process.env.BACKEND_PORT || 3001;
@@ -58,7 +80,7 @@ app.use('/api/forecasts', forecastsRoutes);
 app.use('/api/suppliers', suppliersRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/analytics', analyticsRoutes);
-app.use('/api/ai', aiRoutes);
+app.use('/api/ai', aiLimiter, aiRoutes);
 app.use('/api/export', exportRoutes);
 
 // New AI Feature Routes
@@ -69,6 +91,27 @@ app.use('/api/dead-stock', deadStockRoutes);
 app.use('/api/warehouse-optimizer', warehouseOptimizerRoutes);
 app.use('/api/inventory-optimizer', inventoryOptimizerRoutes);
 app.use('/api/shipment-tracker', shipmentTrackerRoutes);
+
+// Apply AI analyze rate limiter to all AI analyze sub-routes
+app.use('/api/demand-predictor/analyze', aiAnalyzeLimiter);
+app.use('/api/supplier-risk/analyze', aiAnalyzeLimiter);
+app.use('/api/reorder-optimizer/analyze', aiAnalyzeLimiter);
+app.use('/api/dead-stock/analyze', aiAnalyzeLimiter);
+app.use('/api/warehouse-optimizer/analyze', aiAnalyzeLimiter);
+app.use('/api/inventory-optimizer/analyze', aiAnalyzeLimiter);
+app.use('/api/shipment-tracker/analyze', aiAnalyzeLimiter);
+
+// New routes
+app.use('/api/products', stockoutRiskRoutes);
+app.use('/api/ai', aiAnalyzeLimiter, supplierDiversificationRoutes);
+app.use('/api/ai', aiAnalyzeLimiter, promotionSimulatorRoutes);
+
+// Apply pass 5
+app.use('/api/replenishment', replenishmentRoutes);
+app.use('/api/supplier-marketplace', supplierMarketplaceRoutes);
+app.use('/api/integrations', integrationRoutes);
+import('./routes/markdownOptimizer.js').then(m => app.use('/api/markdown-optimizer', m.default));
+import('./routes/multiWarehouseBalancer.js').then(m => app.use('/api/multi-warehouse-balancer', m.default));
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -88,6 +131,19 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
 });
 
-app.listen(PORT, () => {
+
+app.use('/api/gap-no-markdown-timing-ai', route_gap_no_markdown_timing_ai);
+app.use('/api/gap-no-supplier-disruption-simulator', route_gap_no_supplier_disruption_simulator);
+app.use('/api/gap-no-multi-warehouse-balancing-ai', route_gap_no_multi_warehouse_balancing_ai);
+app.use('/api/gap-no-sku-rationalization-which-skus-to', route_gap_no_sku_rationalization_which_skus_to);
+app.use('/api/gap-live-erp-sap-netsuite-integrations-still', route_gap_live_erp_sap_netsuite_integrations_still);
+app.use('/api/gap-no-financial-pl-module', route_gap_no_financial_pl_module);
+app.use('/api/gap-no-notifications-module-0-references', route_gap_no_notifications_module_0_references);
+app.use('/api/gap-no-webhook-surface', route_gap_no_webhook_surface);
+app.use('/api/gap-no-file-upload-for-supplier-docs', route_gap_no_file_upload_for_supplier_docs);
+app.use('/api/gap-no-real-time-websocket-inventory-updates', route_gap_no_real_time_websocket_inventory_updates);
+
+app.listen(PORT, async () => {
   console.log(`Backend server running on http://localhost:${PORT}`);
+  await ensureAuditTable();
 });

@@ -21,6 +21,27 @@ import DeadStock from './pages/DeadStock';
 import WarehouseOptimizer from './pages/WarehouseOptimizer';
 import InventoryOptimizer from './pages/InventoryOptimizer';
 import ShipmentTracker from './pages/ShipmentTracker';
+import PromotionSimulator from './pages/PromotionSimulator';
+import AdvancedAITools from './pages/AdvancedAITools';
+import Pass5Tools from './pages/Pass5Tools';
+
+// === Batch 04 Gaps & Frontend Mounts ===
+import CfAgenticInventoryManagerAutonomouslyP from './pages/CfAgenticInventoryManagerAutonomouslyP';
+import CfDemandSupplyFusionIntegratingCustome from './pages/CfDemandSupplyFusionIntegratingCustome';
+import CfMultiWarehouseNetworkOptimizationRec from './pages/CfMultiWarehouseNetworkOptimizationRec';
+import CfMarkdownClearanceOptimizerBalancingD from './pages/CfMarkdownClearanceOptimizerBalancingD';
+import CfSupplierPerformanceReliabilityTrackin from './pages/CfSupplierPerformanceReliabilityTrackin';
+import CfSeasonalPromotionalPlanningCoordinate from './pages/CfSeasonalPromotionalPlanningCoordinate';
+import GapNoMarkdownTimingAi from './pages/GapNoMarkdownTimingAi';
+import GapNoSupplierDisruptionSimulator from './pages/GapNoSupplierDisruptionSimulator';
+import GapNoMultiWarehouseBalancingAi from './pages/GapNoMultiWarehouseBalancingAi';
+import GapNoSkuRationalizationWhichSkusTo from './pages/GapNoSkuRationalizationWhichSkusTo';
+import GapLiveErpSapNetsuiteIntegrationsStill from './pages/GapLiveErpSapNetsuiteIntegrationsStill';
+import GapNoFinancialPlModule from './pages/GapNoFinancialPlModule';
+import GapNoNotificationsModule0References from './pages/GapNoNotificationsModule0References';
+import GapNoWebhookSurface from './pages/GapNoWebhookSurface';
+import GapNoFileUploadForSupplierDocs from './pages/GapNoFileUploadForSupplierDocs';
+import GapNoRealTimeWebsocketInventoryUpdates from './pages/GapNoRealTimeWebsocketInventoryUpdates';
 
 // Auth Context
 const AuthContext = createContext(null);
@@ -52,6 +73,10 @@ export const api = {
     }
 
     const data = await response.json();
+
+    if (response.status === 429) {
+      throw new Error('429: ' + (data.error || 'Rate limit reached. Please wait before making more requests.'));
+    }
 
     if (!response.ok) {
       throw new Error(data.error || 'Request failed');
@@ -160,7 +185,28 @@ function App() {
                           <Route path="/warehouse-optimizer" element={<WarehouseOptimizer />} />
                           <Route path="/inventory-optimizer" element={<InventoryOptimizer />} />
                           <Route path="/shipment-tracker" element={<ShipmentTracker />} />
-                        </Routes>
+                          <Route path="/promotion-simulator" element={<PromotionSimulator />} />
+                          <Route path="/advanced-ai" element={<AdvancedAITools />} />
+                          <Route path="/pass5-tools" element={<Pass5Tools />} />
+                        
+          {/* // === Batch 04 Gaps & Frontend Mounts === */}
+          <Route path="/cf-agentic-inventory-manager-autonomously-p" element={<CfAgenticInventoryManagerAutonomouslyP />} />
+          <Route path="/cf-demand-supply-fusion-integrating-custome" element={<CfDemandSupplyFusionIntegratingCustome />} />
+          <Route path="/cf-multi-warehouse-network-optimization-rec" element={<CfMultiWarehouseNetworkOptimizationRec />} />
+          <Route path="/cf-markdown-clearance-optimizer-balancing-d" element={<CfMarkdownClearanceOptimizerBalancingD />} />
+          <Route path="/cf-supplier-performance-reliability-trackin" element={<CfSupplierPerformanceReliabilityTrackin />} />
+          <Route path="/cf-seasonal-promotional-planning-coordinate" element={<CfSeasonalPromotionalPlanningCoordinate />} />
+          <Route path="/gap-no-markdown-timing-ai" element={<GapNoMarkdownTimingAi />} />
+          <Route path="/gap-no-supplier-disruption-simulator" element={<GapNoSupplierDisruptionSimulator />} />
+          <Route path="/gap-no-multi-warehouse-balancing-ai" element={<GapNoMultiWarehouseBalancingAi />} />
+          <Route path="/gap-no-sku-rationalization-which-skus-to" element={<GapNoSkuRationalizationWhichSkusTo />} />
+          <Route path="/gap-live-erp-sap-netsuite-integrations-still" element={<GapLiveErpSapNetsuiteIntegrationsStill />} />
+          <Route path="/gap-no-financial-pl-module" element={<GapNoFinancialPlModule />} />
+          <Route path="/gap-no-notifications-module-0-references" element={<GapNoNotificationsModule0References />} />
+          <Route path="/gap-no-webhook-surface" element={<GapNoWebhookSurface />} />
+          <Route path="/gap-no-file-upload-for-supplier-docs" element={<GapNoFileUploadForSupplierDocs />} />
+          <Route path="/gap-no-real-time-websocket-inventory-updates" element={<GapNoRealTimeWebsocketInventoryUpdates />} />
+</Routes>
                       </Layout>
                     </ProtectedRoute>
                   }
