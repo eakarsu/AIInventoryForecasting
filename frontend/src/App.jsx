@@ -24,6 +24,7 @@ import ShipmentTracker from './pages/ShipmentTracker';
 import PromotionSimulator from './pages/PromotionSimulator';
 import AdvancedAITools from './pages/AdvancedAITools';
 import Pass5Tools from './pages/Pass5Tools';
+import CustomViewsPage from './pages/CustomViewsPage';
 
 // === Batch 04 Gaps & Frontend Mounts ===
 import CfAgenticInventoryManagerAutonomouslyP from './pages/CfAgenticInventoryManagerAutonomouslyP';
@@ -188,6 +189,7 @@ function App() {
                           <Route path="/promotion-simulator" element={<PromotionSimulator />} />
                           <Route path="/advanced-ai" element={<AdvancedAITools />} />
                           <Route path="/pass5-tools" element={<Pass5Tools />} />
+                          <Route path="/custom-views" element={<CustomViewsPage />} />
                         
           {/* // === Batch 04 Gaps & Frontend Mounts === */}
           <Route path="/cf-agentic-inventory-manager-autonomously-p" element={<CfAgenticInventoryManagerAutonomouslyP />} />

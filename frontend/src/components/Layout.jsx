@@ -21,6 +21,7 @@ const aiFeatures = [
   { name: 'Shipment Tracker', href: '/shipment-tracker', icon: ShipmentIcon },
   { name: 'Promotion Simulator', href: '/promotion-simulator', icon: PromotionIcon },
   { name: 'Advanced AI', href: '/advanced-ai', icon: DashboardIcon },
+  { name: 'Forecast Views', href: '/custom-views', icon: ForecastsIcon },
 ];
 
 function DashboardIcon({ className }) {

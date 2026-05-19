@@ -50,6 +50,9 @@ import replenishmentRoutes from './routes/replenishment.js';
 import supplierMarketplaceRoutes from './routes/supplierMarketplace.js';
 import integrationRoutes from './routes/integrations.js';
 
+// Custom Views (4 features)
+import customViewsRoutes from './routes/customViews.js';
+
 import { ensureAuditTable } from './services/aiAudit.js';
 
 const app = express();
@@ -112,6 +115,9 @@ app.use('/api/supplier-marketplace', supplierMarketplaceRoutes);
 app.use('/api/integrations', integrationRoutes);
 import('./routes/markdownOptimizer.js').then(m => app.use('/api/markdown-optimizer', m.default));
 import('./routes/multiWarehouseBalancer.js').then(m => app.use('/api/multi-warehouse-balancer', m.default));
+
+// Custom Views mounted BEFORE 404 handler
+app.use('/api/custom-views', customViewsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
