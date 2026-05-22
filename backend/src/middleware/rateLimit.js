@@ -1,4 +1,4 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
 // General rate limit: 100 requests per 15 minutes
 export const generalLimiter = rateLimit({
@@ -35,8 +35,8 @@ export const aiAnalyzeLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'AI rate limit reached. Maximum 20 AI analysis requests per hour.' },
-  keyGenerator: (req) => {
-    // Key by user id (from JWT) if available, else IP
-    return req.user?.id ? String(req.user.id) : req.ip;
+  keyGenerator: (req, res) => {
+    // Key by user id (from JWT) if available, else IP (IPv6-safe)
+    return req.user?.id ? String(req.user.id) : ipKeyGenerator(req, res);
   },
 });

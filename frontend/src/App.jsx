@@ -25,6 +25,7 @@ import PromotionSimulator from './pages/PromotionSimulator';
 import AdvancedAITools from './pages/AdvancedAITools';
 import Pass5Tools from './pages/Pass5Tools';
 import CustomViewsPage from './pages/CustomViewsPage';
+import ExpiryWasteOptimizer from './pages/ExpiryWasteOptimizer';
 
 // === Batch 04 Gaps & Frontend Mounts ===
 import CfAgenticInventoryManagerAutonomouslyP from './pages/CfAgenticInventoryManagerAutonomouslyP';
@@ -43,6 +44,11 @@ import GapNoNotificationsModule0References from './pages/GapNoNotificationsModul
 import GapNoWebhookSurface from './pages/GapNoWebhookSurface';
 import GapNoFileUploadForSupplierDocs from './pages/GapNoFileUploadForSupplierDocs';
 import GapNoRealTimeWebsocketInventoryUpdates from './pages/GapNoRealTimeWebsocketInventoryUpdates';
+
+import CodexCustomVizFeature from './pages/CodexCustomVizFeature';
+import CodexOperationsFeature from './pages/CodexOperationsFeature';
+
+import TimelineView from './pages/TimelineView';
 
 // Auth Context
 const AuthContext = createContext(null);
@@ -164,6 +170,10 @@ function App() {
           <ConfirmProvider>
             <BrowserRouter>
               <Routes>
+        <Route path="/insights/timeline" element={<ProtectedRoute><TimelineView /></ProtectedRoute>} />
+        <Route path="/codex/custom-viz" element={<ProtectedRoute><CodexCustomVizFeature /></ProtectedRoute>} />
+        <Route path="/codex/operations" element={<ProtectedRoute><CodexOperationsFeature /></ProtectedRoute>} />
+
                 <Route path="/login" element={<Login />} />
                 <Route
                   path="/*"
@@ -190,6 +200,7 @@ function App() {
                           <Route path="/advanced-ai" element={<AdvancedAITools />} />
                           <Route path="/pass5-tools" element={<Pass5Tools />} />
                           <Route path="/custom-views" element={<CustomViewsPage />} />
+                          <Route path="/expiry-waste-optimizer" element={<ExpiryWasteOptimizer />} />
                         
           {/* // === Batch 04 Gaps & Frontend Mounts === */}
           <Route path="/cf-agentic-inventory-manager-autonomously-p" element={<CfAgenticInventoryManagerAutonomouslyP />} />

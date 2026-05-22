@@ -113,6 +113,7 @@ app.use('/api/ai', aiAnalyzeLimiter, promotionSimulatorRoutes);
 app.use('/api/replenishment', replenishmentRoutes);
 app.use('/api/supplier-marketplace', supplierMarketplaceRoutes);
 app.use('/api/integrations', integrationRoutes);
+app.use('/api/expiry-waste-optimizer', (await import('./routes/expiryWasteOptimizer.js')).default);
 import('./routes/markdownOptimizer.js').then(m => app.use('/api/markdown-optimizer', m.default));
 import('./routes/multiWarehouseBalancer.js').then(m => app.use('/api/multi-warehouse-balancer', m.default));
 
