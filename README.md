@@ -1,6 +1,6 @@
 # AI Inventory Forecasting Application
 
-A full-stack AI-powered inventory forecasting application with PostgreSQL, React frontend, Node.js backend, and OpenRouter AI integration.
+A full-stack inventory forecasting application with PostgreSQL, React, and Node.js. The governed workflow is deterministic and planner-controlled; model-provider output is explanatory only and cannot approve or create orders. See `docs/OPERATIONS.md` for the non-destructive lifecycle and outstanding release gates.
 
 ## Tech Stack
 

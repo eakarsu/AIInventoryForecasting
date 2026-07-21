@@ -1,5 +1,5 @@
 import pg from 'pg';
-import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -10,12 +10,23 @@ dotenv.config({ path: join(__dirname, '../../../.env') });
 
 const { Pool } = pg;
 
+if (process.env.NODE_ENV === 'production' ||
+    (process.env.ALLOW_DEMO_SEED !== 'true' && process.env.ALLOW_DEVELOPMENT_SEED !== 'yes')) {
+  throw new Error('Demo seed is disabled; enable it explicitly outside production');
+}
+const demoPassword = process.env.DEMO_SEED_PASSWORD || process.env.DEMO_PASSWORD;
+if (!demoPassword || demoPassword.length < 12) {
+  throw new Error('DEMO_SEED_PASSWORD or DEMO_PASSWORD must contain at least 12 characters');
+}
+const demoEmail = process.env.DEMO_EMAIL || 'demo@inventory.ai';
+
 const pool = new Pool({
-  host: process.env.POSTGRES_HOST || 'localhost',
-  port: parseInt(process.env.POSTGRES_PORT || '5432'),
-  database: process.env.POSTGRES_DB || 'inventory_ai',
-  user: process.env.POSTGRES_USER || 'postgres',
-  password: process.env.POSTGRES_PASSWORD || 'postgres',
+  connectionString: process.env.DATABASE_URL || undefined,
+  host: process.env.DATABASE_URL ? undefined : process.env.POSTGRES_HOST,
+  port: process.env.DATABASE_URL ? undefined : parseInt(process.env.POSTGRES_PORT || '5432'),
+  database: process.env.DATABASE_URL ? undefined : process.env.POSTGRES_DB,
+  user: process.env.DATABASE_URL ? undefined : process.env.POSTGRES_USER,
+  password: process.env.DATABASE_URL ? undefined : process.env.POSTGRES_PASSWORD,
 });
 
 async function seed() {
@@ -33,10 +44,11 @@ async function seed() {
 
     // Seed users (15+ items)
     console.log('Seeding users...');
-    const passwordHash = await bcrypt.hash('demo123', 10);
+    const salt = crypto.randomBytes(16).toString('hex');
+    const passwordHash = `scrypt$${salt}$${crypto.scryptSync(demoPassword, salt, 64).toString('hex')}`;
     await pool.query(`
       INSERT INTO users (email, password_hash, name, role, email_verified) VALUES
-      ('demo@inventory.ai', $1, 'Demo User', 'admin', TRUE),
+      ($2, $1, 'Demo User', 'admin', TRUE),
       ('john@inventory.ai', $1, 'John Smith', 'manager', TRUE),
       ('jane@inventory.ai', $1, 'Jane Doe', 'user', TRUE),
       ('sarah@inventory.ai', $1, 'Sarah Wilson', 'manager', TRUE),
@@ -52,7 +64,7 @@ async function seed() {
       ('maria@inventory.ai', $1, 'Maria Garcia', 'user', TRUE),
       ('robert@inventory.ai', $1, 'Robert Lee', 'admin', TRUE)
       ON CONFLICT (email) DO NOTHING
-    `, [passwordHash]);
+    `, [passwordHash, demoEmail]);
 
     // Seed suppliers (16 items)
     console.log('Seeding suppliers...');

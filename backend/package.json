@@ -5,10 +5,12 @@
   "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "start": "node --watch src/index.js",
+    "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "prod": "node src/index.js",
-    "seed": "node src/db/seed.js"
+    "migrate": "bash ../scripts/migrate.sh",
+    "seed": "node src/db/seed.js",
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

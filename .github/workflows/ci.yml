@@ -1,0 +1,20 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  governed-policy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test backend/test/*.test.js
+      - run: node --check backend/src/domain/forecastPolicy.js
+      - run: node --check backend/src/routes/governedForecasting.js
+      - run: node --check backend/src/services/integrationBoundary.js
+      - run: bash -n start.sh scripts/bootstrap.sh scripts/migrate.sh scripts/seed-development.sh

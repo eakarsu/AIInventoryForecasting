@@ -1,15 +1,4 @@
 
-// === Batch 04 Gaps & Frontend Mounts ===
-import route_gap_no_markdown_timing_ai from '../routes/gap-no-markdown-timing-ai.js';
-import route_gap_no_supplier_disruption_simulator from '../routes/gap-no-supplier-disruption-simulator.js';
-import route_gap_no_multi_warehouse_balancing_ai from '../routes/gap-no-multi-warehouse-balancing-ai.js';
-import route_gap_no_sku_rationalization_which_skus_to from '../routes/gap-no-sku-rationalization-which-skus-to.js';
-import route_gap_live_erp_sap_netsuite_integrations_still from '../routes/gap-live-erp-sap-netsuite-integrations-still.js';
-import route_gap_no_financial_pl_module from '../routes/gap-no-financial-pl-module.js';
-import route_gap_no_notifications_module_0_references from '../routes/gap-no-notifications-module-0-references.js';
-import route_gap_no_webhook_surface from '../routes/gap-no-webhook-surface.js';
-import route_gap_no_file_upload_for_supplier_docs from '../routes/gap-no-file-upload-for-supplier-docs.js';
-import route_gap_no_real_time_websocket_inventory_updates from '../routes/gap-no-real-time-websocket-inventory-updates.js';
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -49,18 +38,18 @@ import promotionSimulatorRoutes from './routes/promotionSimulator.js';
 import replenishmentRoutes from './routes/replenishment.js';
 import supplierMarketplaceRoutes from './routes/supplierMarketplace.js';
 import integrationRoutes from './routes/integrations.js';
+import governedForecastingRoutes from './routes/governedForecasting.js';
 
 // Custom Views (4 features)
 import customViewsRoutes from './routes/customViews.js';
-
-import { ensureAuditTable } from './services/aiAudit.js';
 
 const app = express();
 const PORT = process.env.BACKEND_PORT || 3001;
 
 // Security middleware
 app.use(helmet());
-app.use(cors());
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map((value) => value.trim()).filter(Boolean);
+app.use(cors({ origin: (origin, callback) => (!origin || allowedOrigins.includes(origin) ? callback(null, true) : callback(new Error('origin not allowed'))) }));
 app.use(express.json());
 
 // Rate limiting
@@ -113,6 +102,7 @@ app.use('/api/ai', aiAnalyzeLimiter, promotionSimulatorRoutes);
 app.use('/api/replenishment', replenishmentRoutes);
 app.use('/api/supplier-marketplace', supplierMarketplaceRoutes);
 app.use('/api/integrations', integrationRoutes);
+app.use('/api/governed-forecasting', governedForecastingRoutes);
 app.use('/api/expiry-waste-optimizer', (await import('./routes/expiryWasteOptimizer.js')).default);
 import('./routes/markdownOptimizer.js').then(m => app.use('/api/markdown-optimizer', m.default));
 import('./routes/multiWarehouseBalancer.js').then(m => app.use('/api/multi-warehouse-balancer', m.default));
@@ -138,19 +128,6 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
 });
 
-
-app.use('/api/gap-no-markdown-timing-ai', route_gap_no_markdown_timing_ai);
-app.use('/api/gap-no-supplier-disruption-simulator', route_gap_no_supplier_disruption_simulator);
-app.use('/api/gap-no-multi-warehouse-balancing-ai', route_gap_no_multi_warehouse_balancing_ai);
-app.use('/api/gap-no-sku-rationalization-which-skus-to', route_gap_no_sku_rationalization_which_skus_to);
-app.use('/api/gap-live-erp-sap-netsuite-integrations-still', route_gap_live_erp_sap_netsuite_integrations_still);
-app.use('/api/gap-no-financial-pl-module', route_gap_no_financial_pl_module);
-app.use('/api/gap-no-notifications-module-0-references', route_gap_no_notifications_module_0_references);
-app.use('/api/gap-no-webhook-surface', route_gap_no_webhook_surface);
-app.use('/api/gap-no-file-upload-for-supplier-docs', route_gap_no_file_upload_for_supplier_docs);
-app.use('/api/gap-no-real-time-websocket-inventory-updates', route_gap_no_real_time_websocket_inventory_updates);
-
-app.listen(PORT, async () => {
+app.listen(PORT, () => {
   console.log(`Backend server running on http://localhost:${PORT}`);
-  await ensureAuditTable();
 });

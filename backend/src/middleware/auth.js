@@ -3,9 +3,15 @@ import jwt from 'jsonwebtoken';
 // In-memory token blacklist (for logout)
 export const tokenBlacklist = new Set();
 
+export function getJwtSecret() {
+  const secret = process.env.JWT_SECRET || '';
+  if (secret.length < 32) throw new Error('JWT_SECRET must contain at least 32 characters');
+  return secret;
+}
+
 export const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
-  const token = (authHeader && authHeader.split(' ')[1]) || req.query.token; // Bearer TOKEN or query param
+  const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
 
   if (!token) {
     return res.status(401).json({ error: 'Access token required' });
@@ -18,7 +24,8 @@ export const authenticateToken = (req, res, next) => {
   try {
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || 'your-super-secret-jwt-key'
+      getJwtSecret(),
+      { issuer: 'inventory-forecasting' }
     );
     req.user = decoded;
     req.token = token;

@@ -1,11 +1,21 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { query } from '../db/connection.js';
-import { authenticateToken, tokenBlacklist } from '../middleware/auth.js';
+import { authenticateToken, getJwtSecret, tokenBlacklist } from '../middleware/auth.js';
 
 const router = express.Router();
+
+async function verifyPassword(password, digest) {
+  if (!String(digest || '').startsWith('scrypt$')) return bcrypt.compare(password, digest);
+  const [, salt, expected] = String(digest).split('$');
+  if (!salt || !expected) return false;
+  const actualBuffer = crypto.scryptSync(String(password), salt, 64);
+  const expectedBuffer = Buffer.from(expected, 'hex');
+  return actualBuffer.length === expectedBuffer.length && crypto.timingSafeEqual(actualBuffer, expectedBuffer);
+}
 
 // Login
 router.post('/login', async (req, res) => {
@@ -16,22 +26,26 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const result = await query('SELECT * FROM users WHERE email = $1', [email]);
+    const result = await query(
+      `SELECT u.*,m.tenant_id,m.role AS membership_role FROM users u
+       LEFT JOIN tenant_memberships m ON m.user_id=u.id AND m.active=TRUE
+       WHERE LOWER(u.email)=LOWER($1) LIMIT 1`, [email]
+    );
     const user = result.rows[0];
 
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const validPassword = await bcrypt.compare(password, user.password_hash);
+    const validPassword = await verifyPassword(password, user.password_hash);
     if (!validPassword) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET || 'your-super-secret-jwt-key',
-      { expiresIn: '24h' }
+      { id: user.id, email: user.email, role: user.membership_role || user.role, tenantId: user.tenant_id || null },
+      getJwtSecret(),
+      { expiresIn: process.env.JWT_TTL || '1h', issuer: 'inventory-forecasting' }
     );
 
     res.json({
@@ -53,10 +67,16 @@ router.post('/login', async (req, res) => {
 // Register
 router.post('/register', async (req, res) => {
   try {
+    if (process.env.ALLOW_SELF_REGISTRATION !== 'true') {
+      return res.status(403).json({ error: 'Self-registration is disabled; request tenant-admin provisioning' });
+    }
     const { email, password, name } = req.body;
 
     if (!email || !password || !name) {
       return res.status(400).json({ error: 'Email, password, and name are required' });
+    }
+    if (password.length < 12) {
+      return res.status(400).json({ error: 'Password must be at least 12 characters' });
     }
 
     const existingUser = await query('SELECT id FROM users WHERE email = $1', [email]);
@@ -75,8 +95,8 @@ router.post('/register', async (req, res) => {
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET || 'your-super-secret-jwt-key',
-      { expiresIn: '24h' }
+      getJwtSecret(),
+      { expiresIn: process.env.JWT_TTL || '1h', issuer: 'inventory-forecasting' }
     );
 
     res.status(201).json({
@@ -172,14 +192,14 @@ router.put('/change-password', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Current and new password are required' });
     }
 
-    if (newPassword.length < 6) {
-      return res.status(400).json({ error: 'New password must be at least 6 characters' });
+    if (newPassword.length < 12) {
+      return res.status(400).json({ error: 'New password must be at least 12 characters' });
     }
 
     const result = await query('SELECT password_hash FROM users WHERE id = $1', [req.user.id]);
     const user = result.rows[0];
 
-    const validPassword = await bcrypt.compare(currentPassword, user.password_hash);
+    const validPassword = await verifyPassword(currentPassword, user.password_hash);
     if (!validPassword) {
       return res.status(401).json({ error: 'Current password is incorrect' });
     }
@@ -219,9 +239,8 @@ router.post('/forgot-password', async (req, res) => {
     );
 
     // In dev, log the token instead of sending email
-    console.log(`Password reset token for ${email}: ${token}`);
-
-    res.json({ message: 'If the email exists, a reset link has been sent.', ...(process.env.NODE_ENV !== 'production' && { resetToken: token }) });
+    res.json({ message: 'If the email exists, a reset link has been sent.',
+      ...(process.env.NODE_ENV !== 'production' && process.env.EXPOSE_DEVELOPMENT_TOKENS === 'true' && { resetToken: token }) });
   } catch (error) {
     console.error('Forgot password error:', error);
     res.status(500).json({ error: 'Failed to process request' });
@@ -237,8 +256,8 @@ router.post('/reset-password', async (req, res) => {
       return res.status(400).json({ error: 'Token and new password are required' });
     }
 
-    if (newPassword.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    if (newPassword.length < 12) {
+      return res.status(400).json({ error: 'Password must be at least 12 characters' });
     }
 
     const result = await query(
@@ -273,9 +292,8 @@ router.post('/send-verification', authenticateToken, async (req, res) => {
       [token, req.user.id]
     );
 
-    console.log(`Email verification token for user ${req.user.id}: ${token}`);
-
-    res.json({ message: 'Verification email sent', ...(process.env.NODE_ENV !== 'production' && { verificationToken: token }) });
+    res.json({ message: 'Verification email sent',
+      ...(process.env.NODE_ENV !== 'production' && process.env.EXPOSE_DEVELOPMENT_TOKENS === 'true' && { verificationToken: token }) });
   } catch (error) {
     console.error('Send verification error:', error);
     res.status(500).json({ error: 'Failed to send verification email' });

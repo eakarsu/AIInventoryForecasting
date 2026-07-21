@@ -14,23 +14,6 @@ import { authenticateToken } from '../middleware/auth.js';
 const router = Router();
 router.use(authenticateToken);
 
-(async () => {
-  try {
-    await query(`
-      CREATE TABLE IF NOT EXISTS replenishment_orders (
-        id SERIAL PRIMARY KEY,
-        product_id INTEGER,
-        supplier_id INTEGER,
-        order_qty INTEGER,
-        unit_cost NUMERIC,
-        status TEXT DEFAULT 'draft',
-        rationale TEXT,
-        created_at TIMESTAMP DEFAULT NOW(),
-        updated_at TIMESTAMP DEFAULT NOW()
-      )`);
-  } catch (e) { console.error('replenishment bootstrap error:', e.message); }
-})();
-
 // POST /api/replenishment/generate-drafts — generate draft POs
 // Body: { reorder_threshold_pct?: 0..1, lookback_days?: number, dry_run?: bool }
 router.post('/generate-drafts', async (req, res) => {

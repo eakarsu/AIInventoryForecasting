@@ -10,11 +10,13 @@ dotenv.config({ path: join(__dirname, '../../../.env') });
 const { Pool } = pg;
 
 const pool = new Pool({
-  host: process.env.POSTGRES_HOST || 'localhost',
-  port: parseInt(process.env.POSTGRES_PORT || '5432'),
-  database: process.env.POSTGRES_DB || 'inventory_ai',
-  user: process.env.POSTGRES_USER || 'postgres',
-  password: process.env.POSTGRES_PASSWORD || 'postgres',
+  connectionString: process.env.DATABASE_URL || undefined,
+  host: process.env.DATABASE_URL ? undefined : process.env.POSTGRES_HOST,
+  port: process.env.DATABASE_URL ? undefined : Number(process.env.POSTGRES_PORT || 5432),
+  database: process.env.DATABASE_URL ? undefined : process.env.POSTGRES_DB,
+  user: process.env.DATABASE_URL ? undefined : process.env.POSTGRES_USER,
+  password: process.env.DATABASE_URL ? undefined : process.env.POSTGRES_PASSWORD,
+  ssl: process.env.DB_SSL === 'require' ? { rejectUnauthorized: true } : undefined,
 });
 
 // Test connection

@@ -14,34 +14,6 @@ import { authenticateToken } from '../middleware/auth.js';
 const router = Router();
 router.use(authenticateToken);
 
-(async () => {
-  try {
-    await query(`
-      CREATE TABLE IF NOT EXISTS supplier_rfqs (
-        id SERIAL PRIMARY KEY,
-        product_id INTEGER,
-        category TEXT,
-        target_qty INTEGER,
-        target_unit_cost NUMERIC,
-        deadline DATE,
-        notes TEXT,
-        status TEXT DEFAULT 'open',
-        created_by INTEGER,
-        created_at TIMESTAMP DEFAULT NOW()
-      )`);
-    await query(`
-      CREATE TABLE IF NOT EXISTS supplier_rfq_quotes (
-        id SERIAL PRIMARY KEY,
-        rfq_id INTEGER REFERENCES supplier_rfqs(id) ON DELETE CASCADE,
-        supplier_id INTEGER,
-        unit_cost NUMERIC,
-        lead_time_days INTEGER,
-        notes TEXT,
-        submitted_at TIMESTAMP DEFAULT NOW()
-      )`);
-  } catch (e) { console.error('supplierMarketplace bootstrap error:', e.message); }
-})();
-
 function scoreSupplier(s, targetCost, maxLeadDays) {
   let score = 50;
   const lt = Number(s.lead_time_days || 30);
