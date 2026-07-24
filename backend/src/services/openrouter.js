@@ -1,13 +1,11 @@
-const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const OPENROUTER_API_URL = `${(process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1').replace(/\/$/, '')}/chat/completions`;
 
 export async function generateAIResponse(prompt, options = {}) {
   const apiKey = process.env.OPENROUTER_API_KEY;
   const defaultModel = process.env.OPENROUTER_MODEL || 'anthropic/claude-3-5-sonnet-20241022';
 
-  // If no API key, return mock response
   if (!apiKey || apiKey === 'your-openrouter-key') {
-    console.log('OpenRouter API key not configured, returning mock response');
-    return generateMockResponse(prompt);
+    throw new Error('OPENROUTER_API_KEY not configured');
   }
 
   try {
@@ -39,16 +37,14 @@ export async function generateAIResponse(prompt, options = {}) {
 
     if (!response.ok) {
       const error = await response.text();
-      console.error('OpenRouter API error:', error);
-      return generateMockResponse(prompt);
+      throw new Error(`OpenRouter request failed with HTTP ${response.status}: ${error}`);
     }
 
     const data = await response.json();
     let content = data.choices[0]?.message?.content;
 
     if (!content) {
-      console.log('No content in AI response');
-      return generateMockResponse(prompt);
+      throw new Error('OpenRouter returned empty content');
     }
 
     console.log('Raw AI response length:', content.length);
@@ -106,7 +102,7 @@ export async function generateAIResponse(prompt, options = {}) {
     return content;
   } catch (error) {
     console.error('OpenRouter API call failed:', error);
-    return generateMockResponse(prompt);
+    throw error;
   }
 }
 
