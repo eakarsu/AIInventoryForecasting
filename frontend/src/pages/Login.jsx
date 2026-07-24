@@ -84,8 +84,8 @@ export default function Login() {
   };
 
   const handleDemoLogin = () => {
-    setEmail('demo@inventory.ai');
-    setPassword('demo123');
+    setEmail(import.meta.env.VITE_DEMO_EMAIL || '');
+    setPassword(import.meta.env.VITE_DEMO_PASSWORD || '');
   };
 
   return (
