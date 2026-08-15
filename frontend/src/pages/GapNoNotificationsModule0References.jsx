@@ -1,3 +1,4 @@
+import GeneratedAiResponse from './GeneratedAiResponse';
 import React, { useState } from 'react';
 
 // === Batch 04 Gaps & Frontend Mounts ===
@@ -91,7 +92,7 @@ export default function GapNoNotificationsModule0References() {
       {result && (
         <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '1rem', borderRadius: '8px' }}>
           <h3 style={{ marginTop: 0 }}>Result</h3>
-          <pre style={{ whiteSpace: 'pre-wrap', margin: 0, fontSize: '0.9rem' }}>{typeof result === 'string' ? result : JSON.stringify(result, null, 2)}</pre>
+          <GeneratedAiResponse response={result} />
         </div>
       )}
     </div>

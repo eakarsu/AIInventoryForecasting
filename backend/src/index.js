@@ -42,6 +42,7 @@ import governedForecastingRoutes from './routes/governedForecasting.js';
 
 // Custom Views (4 features)
 import customViewsRoutes from './routes/customViews.js';
+import generatedFeaturesRoutes from './routes/generatedFeatures.js';
 
 const app = express();
 const PORT = process.env.BACKEND_PORT || 3001;
@@ -109,6 +110,7 @@ import('./routes/multiWarehouseBalancer.js').then(m => app.use('/api/multi-wareh
 
 // Custom Views mounted BEFORE 404 handler
 app.use('/api/custom-views', customViewsRoutes);
+app.use('/api', aiAnalyzeLimiter, generatedFeaturesRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
