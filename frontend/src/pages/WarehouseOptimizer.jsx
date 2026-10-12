@@ -533,8 +533,8 @@ export default function WarehouseOptimizer() {
                 )}
 
                 {selectedItem.ai_layout_suggestion && (
-                  <DetailSection title="AI Layout Suggestion">
-                    <p className="text-gray-700">{selectedItem.ai_layout_suggestion}</p>
+                  <DetailSection title="Saved AI layout suggestion">
+                    <AIResultDisplay data={selectedItem.ai_layout_suggestion} title="Saved AI Layout Suggestion" />
                   </DetailSection>
                 )}
               </>

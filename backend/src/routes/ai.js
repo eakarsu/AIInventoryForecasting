@@ -623,7 +623,8 @@ Return JSON:
 // Multi-warehouse inventory balancing
 router.post('/multi-warehouse-balancing', authenticateToken, async (req, res) => {
   try {
-    const { product_id } = req.body;
+    const { product_id, horizon_days = 30 } = req.body;
+    const planningHorizon = Math.min(365, Math.max(1, Number.parseInt(horizon_days, 10) || 30));
 
     let products = [];
     if (product_id) {
@@ -657,6 +658,8 @@ ${JSON.stringify(warehouses, null, 2)}
 Per-warehouse inventory (sample):
 ${JSON.stringify(inventoryByWarehouse.slice(0, 100), null, 2)}
 
+Planning horizon: ${planningHorizon} days
+
 If no warehouse data is available, infer reasonable assumptions from product current_stock and explicitly note the assumption.
 
 Return JSON:
@@ -670,7 +673,7 @@ Return JSON:
 }`;
 
     const ai = await generateAIResponse(prompt);
-    res.json({ analyzed: products.length, warehouses: warehouses.length, balancing: ai, generated_at: new Date().toISOString() });
+    res.json({ analyzed: products.length, warehouses: warehouses.length, horizon_days: planningHorizon, balancing: ai, generated_at: new Date().toISOString() });
   } catch (error) {
     console.error('Multi-warehouse balancing error:', error);
     res.status(500).json({ error: 'Failed to recommend warehouse balancing' });

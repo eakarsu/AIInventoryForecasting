@@ -419,8 +419,8 @@ export default function ReorderOptimizer() {
                 </DetailSection>
 
                 {selectedItem.ai_recommendation && (
-                  <DetailSection title="AI Recommendation">
-                    <p className="text-gray-700">{selectedItem.ai_recommendation}</p>
+                  <DetailSection title="Saved AI recommendation">
+                    <AIResultDisplay data={selectedItem.ai_recommendation} title="Saved AI Reorder Recommendation" />
                   </DetailSection>
                 )}
               </>

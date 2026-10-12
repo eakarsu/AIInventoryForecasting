@@ -1,3 +1,4 @@
+import AIReportLibrary from "./components/AIReportLibrary";
 import { useState, useEffect, createContext, useContext } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -164,7 +165,7 @@ function App() {
   };
 
   return (
-    <ErrorBoundary>
+    <><AIReportLibrary floating /><ErrorBoundary>
       <AuthContext.Provider value={{ user, login, logout, loading }}>
         <ToastProvider>
           <ConfirmProvider>
@@ -229,7 +230,7 @@ function App() {
           </ConfirmProvider>
         </ToastProvider>
       </AuthContext.Provider>
-    </ErrorBoundary>
+    </ErrorBoundary></>
   );
 }
 

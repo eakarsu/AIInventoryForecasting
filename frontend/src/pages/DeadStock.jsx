@@ -470,8 +470,8 @@ export default function DeadStock() {
                 </DetailSection>
 
                 {selectedItem.ai_analysis && (
-                  <DetailSection title="AI Analysis">
-                    <p className="text-gray-700">{selectedItem.ai_analysis}</p>
+                  <DetailSection title="Saved AI analysis">
+                    <AIResultDisplay data={selectedItem.ai_analysis} title="Saved AI Dead Stock Analysis" />
                   </DetailSection>
                 )}
               </>

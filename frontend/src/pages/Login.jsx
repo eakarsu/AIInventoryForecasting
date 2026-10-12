@@ -83,9 +83,17 @@ export default function Login() {
     }
   };
 
+  const demoEmail = import.meta.env.VITE_DEMO_EMAIL || '';
+  const demoPassword = import.meta.env.VITE_DEMO_PASSWORD || '';
+  const demoAvailable = import.meta.env.VITE_ENABLE_DEMO_CREDENTIAL_AUTOFILL === 'true' && Boolean(demoEmail && demoPassword);
   const handleDemoLogin = () => {
-    setEmail(import.meta.env.VITE_DEMO_EMAIL || '');
-    setPassword(import.meta.env.VITE_DEMO_PASSWORD || '');
+    if (!demoAvailable) {
+      setError('Demo credentials are unavailable in this environment.');
+      return;
+    }
+    setEmail(demoEmail);
+    setPassword(demoPassword);
+    setError('');
   };
 
   return (
@@ -188,14 +196,15 @@ export default function Login() {
                 type="button"
                 onClick={handleDemoLogin}
                 className="w-full btn-secondary py-3 flex items-center justify-center"
+                aria-describedby="demo-login-help"
               >
                 <svg className="w-5 h-5 mr-2 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                Auto Fill Demo Credentials
+                Fill Demo Credentials
               </button>
-              <p className="mt-4 text-center text-xs text-gray-500">
-                Demo credentials will be auto-filled. Click "Sign In" to continue.
+              <p id="demo-login-help" className="mt-4 text-center text-xs text-gray-500">
+                {demoAvailable ? 'Uses the configured local demo account. Review the fields, then click Sign In.' : 'Demo autofill is disabled or not configured for this environment.'}
               </p>
             </>
           )}

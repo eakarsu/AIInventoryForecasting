@@ -1,5 +1,19 @@
 import { useState } from 'react';
 
+export function normalizeAIData(value) {
+  if (typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  if (!trimmed) return value;
+  const candidate = trimmed.replace(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/i, '$1').trim();
+  if (!/^(?:\{|\[|\")/.test(candidate)) return value;
+  try {
+    const parsed = JSON.parse(candidate);
+    return typeof parsed === 'string' && parsed !== value ? normalizeAIData(parsed) : parsed;
+  } catch {
+    return value;
+  }
+}
+
 // Professional AI Result Display Component
 export default function AIResultDisplay({ data, title, loading, error }) {
   const [expanded, setExpanded] = useState(true);
@@ -38,6 +52,7 @@ export default function AIResultDisplay({ data, title, loading, error }) {
   }
 
   if (!data) return null;
+  const normalizedData = normalizeAIData(data);
 
   return (
     <div className="bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 border-2 border-emerald-200 rounded-xl overflow-hidden shadow-lg">
@@ -54,7 +69,7 @@ export default function AIResultDisplay({ data, title, loading, error }) {
           </div>
           <div>
             <h3 className="text-white font-bold text-lg">{title || 'AI Analysis Results'}</h3>
-            <p className="text-emerald-100 text-sm">Powered by Claude AI</p>
+            <p className="text-emerald-100 text-sm">Structured AI report</p>
           </div>
         </div>
         <svg
@@ -68,7 +83,7 @@ export default function AIResultDisplay({ data, title, loading, error }) {
       {/* Content */}
       {expanded && (
         <div className="p-6">
-          <RenderAIData data={data} />
+          <RenderAIData data={normalizedData} />
         </div>
       )}
     </div>
@@ -77,6 +92,9 @@ export default function AIResultDisplay({ data, title, loading, error }) {
 
 // Recursive component to render AI data beautifully
 function RenderAIData({ data, depth = 0 }) {
+  const normalized = normalizeAIData(data);
+  if (normalized !== data) return <RenderAIData data={normalized} depth={depth} />;
+
   if (data === null || data === undefined) {
     return <span className="text-gray-400 italic">N/A</span>;
   }
@@ -89,7 +107,7 @@ function RenderAIData({ data, depth = 0 }) {
     if (data.match(/^(upward|stable|downward|growing|declining)$/i)) {
       return <TrendBadge trend={data} />;
     }
-    return <span className="text-gray-700">{data}</span>;
+    return <span className="text-gray-700 whitespace-pre-wrap leading-relaxed">{data}</span>;
   }
 
   if (typeof data === 'number') {
@@ -122,7 +140,24 @@ function RenderAIData({ data, depth = 0 }) {
       );
     }
 
-    // Array of objects
+    const tabular = data.every((item) => item && typeof item === 'object' && !Array.isArray(item));
+    const columns = tabular ? [...new Set(data.flatMap((item) => Object.keys(item)))] : [];
+    const scalarTable = tabular && columns.length <= 10 && data.every((item) => columns.every((key) => {
+      const value = normalizeAIData(item[key]);
+      return value == null || ['string', 'number', 'boolean'].includes(typeof value);
+    }));
+    if (scalarTable) {
+      return (
+        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+          <table className="min-w-full divide-y divide-gray-200 text-sm">
+            <thead className="bg-gray-50"><tr>{columns.map((key) => <th key={key} className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">{formatLabel(key)}</th>)}</tr></thead>
+            <tbody className="divide-y divide-gray-100">{data.map((row, index) => <tr key={index}>{columns.map((key) => <td key={key} className="px-3 py-2 align-top"><RenderAIData data={row[key]} depth={depth + 1} /></td>)}</tr>)}</tbody>
+          </table>
+        </div>
+      );
+    }
+
+    // Complex arrays remain readable as individual cards.
     return (
       <div className="space-y-3">
         {data.map((item, i) => (
@@ -146,7 +181,7 @@ function RenderAIData({ data, depth = 0 }) {
         {summaryEntry && (
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border-l-4 border-blue-500">
             <h4 className="text-sm font-semibold text-blue-800 uppercase tracking-wide mb-2">Summary</h4>
-            <p className="text-gray-700 leading-relaxed">{summaryEntry[1]}</p>
+            <div className="text-gray-700 leading-relaxed"><RenderAIData data={summaryEntry[1]} depth={depth + 1} /></div>
           </div>
         )}
 
@@ -164,7 +199,12 @@ function RenderAIData({ data, depth = 0 }) {
 
 function DataCard({ label, value, depth }) {
   const formattedLabel = formatLabel(label);
-  const isNested = typeof value === 'object' && value !== null;
+  const normalizedValue = normalizeAIData(value);
+  const isNested = typeof normalizedValue === 'object' && normalizedValue !== null;
+  const isWide = depth === 0 && isNested && (
+    Array.isArray(normalizedValue)
+    || Object.values(normalizedValue).some((item) => item && typeof item === 'object')
+  );
 
   // Special styling for certain fields
   const getCardStyle = () => {
@@ -182,7 +222,7 @@ function DataCard({ label, value, depth }) {
   };
 
   return (
-    <div className={`bg-white rounded-lg p-4 border border-gray-100 shadow-sm ${getCardStyle()}`}>
+    <div className={`bg-white rounded-lg p-4 border border-gray-100 shadow-sm ${isWide ? 'md:col-span-2 lg:col-span-3' : ''} ${getCardStyle()}`}>
       <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
         {formattedLabel}
       </h4>

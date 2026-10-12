@@ -412,8 +412,8 @@ export default function SupplierRisk() {
                 )}
 
                 {selectedItem.ai_analysis && (
-                  <DetailSection title="AI Analysis">
-                    <p className="text-gray-700">{selectedItem.ai_analysis}</p>
+                  <DetailSection title="Saved AI analysis">
+                    <AIResultDisplay data={selectedItem.ai_analysis} title="Saved AI Risk Analysis" />
                   </DetailSection>
                 )}
               </>

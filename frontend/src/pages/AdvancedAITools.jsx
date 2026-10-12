@@ -21,7 +21,7 @@ const TOOLS = [
     desc: 'Impacted SKUs, alternative routing, mitigation actions, expected revenue/margin at risk.',
     fields: [
       { name: 'supplier_id', label: 'Supplier', type: 'supplier', required: true },
-      { name: 'severity', label: 'Severity', type: 'select', options: ['low', 'medium', 'high', 'critical'] },
+      { name: 'scenario', label: 'Disruption scenario', type: 'select', options: ['partial outage', 'full outage', 'quality hold', 'transport disruption'] },
       { name: 'duration_days', label: 'Duration (days)', type: 'number', placeholder: '14' },
     ],
   },
@@ -58,6 +58,22 @@ export default function AdvancedAITools() {
   const setField = (name, value) => {
     setForms((p) => ({ ...p, [tab]: { ...(p[tab] || {}), [name]: value } }));
   };
+
+  const fillExample = (selectedTool, index = 0) => {
+    const next = Object.fromEntries(selectedTool.fields.map((field) => {
+      if (field.type === 'product' || field.type === 'supplier') {
+        const records = field.type === 'product' ? products : suppliers;
+        const current = forms[selectedTool.id]?.[field.name];
+        const selected = records.find((record) => String(record.id) === String(current)) || records[index % Math.max(records.length, 1)];
+        return [field.name, selected ? String(selected.id) : ''];
+      }
+      if (field.type === 'select') return [field.name, field.options[index % field.options.length]];
+      return [field.name, field.name === 'duration_days' ? [7, 14, 30][index] : [14, 30, 60][index]];
+    }));
+    setForms((current) => ({ ...current, [selectedTool.id]: next }));
+    setError(null); setResult(null);
+  };
+  const missingRequiredReference = tool.fields.some((field) => field.required && (field.type === 'product' ? !products.length : field.type === 'supplier' ? !suppliers.length : false));
 
   const submit = async (e) => {
     e.preventDefault();
@@ -98,7 +114,7 @@ export default function AdvancedAITools() {
           <button
             key={t.id}
             type="button"
-            onClick={() => { setTab(t.id); setError(null); setResult(null); }}
+            onClick={() => { setTab(t.id); fillExample(t); }}
             className={`px-4 py-2 rounded-lg text-sm font-semibold border ${tab === t.id ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
             style={tab === t.id ? { background: '#4f46e5', color: 'white', border: '1px solid #4f46e5' } : undefined}
           >
@@ -112,6 +128,13 @@ export default function AdvancedAITools() {
         <p className="text-sm text-gray-600 mb-4">{tool.desc}</p>
 
         <form onSubmit={submit} className="space-y-4">
+          <section className="rounded-lg border border-indigo-200 bg-indigo-50 p-4" aria-label="Complete example inputs">
+            <strong>Fill every field, including optional inputs</strong>
+            <p className="text-sm text-gray-600 my-2">Examples select an existing product or supplier from your loaded records. They do not create records or run AI.</p>
+            <div className="flex flex-wrap gap-2">{['Short horizon', 'Standard planning', 'Extended disruption'].map((label, index) => <button key={label} type="button" disabled={loading} className="border rounded px-3 py-2" onClick={() => fillExample(tool, index)}>Demo AI · {label}</button>)}</div>
+            {tool.fields.some((field) => field.type === 'product') && !products.length && <p role="status" className="text-sm mt-2">No product is available to select. Leave the optional product blank for the native all-products scope, or create/select an actual product.</p>}
+            {missingRequiredReference && <p role="status" className="text-sm mt-2">Add or load an actual supplier before generating this analysis. Examples never invent supplier IDs.</p>}
+          </section>
           {tool.fields.map((f) => (
             <div key={f.name}>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -119,7 +142,7 @@ export default function AdvancedAITools() {
               </label>
               {f.type === 'product' ? (
                 <select
-                  value={formData[f.name] || ''}
+                  value={formData[f.name] ?? ''}
                   onChange={(e) => setField(f.name, e.target.value)}
                   className="w-full border border-gray-300 rounded-md px-3 py-2"
                 >
@@ -128,7 +151,7 @@ export default function AdvancedAITools() {
                 </select>
               ) : f.type === 'supplier' ? (
                 <select
-                  value={formData[f.name] || ''}
+                  value={formData[f.name] ?? ''}
                   onChange={(e) => setField(f.name, e.target.value)}
                   className="w-full border border-gray-300 rounded-md px-3 py-2"
                   required={f.required}
@@ -138,7 +161,7 @@ export default function AdvancedAITools() {
                 </select>
               ) : f.type === 'select' ? (
                 <select
-                  value={formData[f.name] || ''}
+                  value={formData[f.name] ?? ''}
                   onChange={(e) => setField(f.name, e.target.value)}
                   className="w-full border border-gray-300 rounded-md px-3 py-2"
                 >
@@ -148,7 +171,7 @@ export default function AdvancedAITools() {
               ) : (
                 <input
                   type={f.type || 'text'}
-                  value={formData[f.name] || ''}
+                  value={formData[f.name] ?? ''}
                   placeholder={f.placeholder || ''}
                   onChange={(e) => setField(f.name, e.target.value)}
                   className="w-full border border-gray-300 rounded-md px-3 py-2"
@@ -159,7 +182,7 @@ export default function AdvancedAITools() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || missingRequiredReference}
             className="bg-primary-600 text-white px-5 py-2 rounded-lg font-semibold disabled:opacity-50"
             style={{ background: loading ? '#94a3b8' : '#4f46e5', color: 'white' }}
           >

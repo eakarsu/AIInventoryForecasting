@@ -365,8 +365,8 @@ export default function DemandPredictor() {
                 </DetailSection>
 
                 {selectedItem.ai_reasoning && (
-                  <DetailSection title="AI Reasoning">
-                    <p className="text-gray-700">{selectedItem.ai_reasoning}</p>
+                  <DetailSection title="Saved AI reasoning">
+                    <AIResultDisplay data={selectedItem.ai_reasoning} title="Saved AI Demand Reasoning" />
                   </DetailSection>
                 )}
               </>

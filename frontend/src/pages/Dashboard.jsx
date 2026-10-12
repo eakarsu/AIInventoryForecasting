@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card, { FeatureCard } from '../components/Card';
 import DetailModal, { DetailSection, DetailRow } from '../components/DetailModal';
+import AIResultDisplay from '../components/AIResultDisplay';
 import { StatusBadge } from '../components/DataTable';
 import { api } from '../App';
 
@@ -441,12 +442,8 @@ export default function Dashboard() {
             </DetailSection>
 
             {selectedRec.details && (
-              <DetailSection title="AI Analysis">
-                <div className="text-sm text-gray-700 whitespace-pre-wrap">
-                  {typeof selectedRec.details === 'string'
-                    ? selectedRec.details
-                    : JSON.stringify(selectedRec.details, null, 2)}
-                </div>
+              <DetailSection title="Saved AI analysis">
+                <AIResultDisplay data={selectedRec.details} title="Saved AI Recommendation Analysis" />
               </DetailSection>
             )}
           </>

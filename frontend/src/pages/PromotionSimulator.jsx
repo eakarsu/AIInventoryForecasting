@@ -1,3 +1,4 @@
+import NativeAIControls from "../components/NativeAIControls.jsx";
 import { useState, useEffect } from 'react';
 import { useToast } from '../components/Toast';
 import { api } from '../App';
@@ -51,7 +52,7 @@ export default function PromotionSimulator() {
   const sim = result?.simulation;
 
   return (
-    <div>
+    <NativeAIControls busy={loading} context="InventoryForecasting"><div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Promotion Simulator</h1>
         <p className="text-gray-500">AI-powered demand simulation for promotional campaigns</p>
@@ -64,7 +65,7 @@ export default function PromotionSimulator() {
           <form onSubmit={handleSimulate} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Product</label>
-              <select
+              <select data-ai-field={"productId"}
                 value={productId}
                 onChange={(e) => setProductId(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
@@ -81,7 +82,7 @@ export default function PromotionSimulator() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Discount Percentage: <span className="text-primary-600 font-bold">{discountPercent}%</span>
               </label>
-              <input
+              <input data-ai-field={"discountPercent"}
                 type="range"
                 min="1"
                 max="80"
@@ -98,7 +99,7 @@ export default function PromotionSimulator() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Campaign Duration: <span className="text-primary-600 font-bold">{campaignDays} days</span>
               </label>
-              <input
+              <input data-ai-field={"campaignDays"}
                 type="range"
                 min="1"
                 max="90"
@@ -200,6 +201,6 @@ export default function PromotionSimulator() {
           )}
         </div>
       </div>
-    </div>
+    </div></NativeAIControls>
   );
 }

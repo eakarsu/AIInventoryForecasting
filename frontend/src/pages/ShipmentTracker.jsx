@@ -658,14 +658,14 @@ export default function ShipmentTracker() {
                 )}
 
                 {selectedItem.ai_risk_assessment && (
-                  <DetailSection title="AI Risk Assessment">
-                    <p className="text-gray-700">{selectedItem.ai_risk_assessment}</p>
+                  <DetailSection title="Saved AI risk assessment">
+                    <AIResultDisplay data={selectedItem.ai_risk_assessment} title="Saved AI Risk Assessment" />
                   </DetailSection>
                 )}
 
                 {selectedItem.ai_route_optimization && (
-                  <DetailSection title="AI Route Optimization">
-                    <p className="text-gray-700">{selectedItem.ai_route_optimization}</p>
+                  <DetailSection title="Saved AI route optimization">
+                    <AIResultDisplay data={selectedItem.ai_route_optimization} title="Saved AI Route Optimization" />
                   </DetailSection>
                 )}
               </>
